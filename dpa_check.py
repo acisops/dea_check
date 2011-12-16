@@ -174,7 +174,8 @@ def main(opt):
                     temps=None)
 
     # Validation
-    plots_validation = make_validation_plots(opt, tlm, db)
+    plots_validation = make_validation_plots(opt, tlm.date[0], tlm.date[-1],
+                                             db)
     valid_viols = make_validation_viols(plots_validation)
     if len(valid_viols) > 0:
         # generate daily plot url if outdir in expected year/day format
@@ -195,14 +196,14 @@ def main(opt):
                 plots_validation=plots_validation)
 
 
-def calc_model(model_spec, states, start, stop, T_dpa0):
+def calc_model(model_spec, states, start, stop, T_dpa=None, T_dpa_times=None):
     model = xija.ThermalModel('dpa', start=start, stop=stop,
                               model_spec=model_spec)
 
     times = np.array([states['tstart'], states['tstop']])
     model.comp['sim_z'].set_data(states['simpos'], times)
     model.comp['eclipse'].set_data(False)
-    model.comp['1dpamzt'].set_data(T_dpa0)
+    model.comp['1dpamzt'].set_data(T_dpa, T_dpa_times)
 
     for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking', 'pitch'):
         model.comp[name].set_data(states[name], times)
@@ -674,7 +675,7 @@ def get_states(datestart, datestop, db):
     return states
 
 
-def make_validation_plots(opt, tlm, db):
+def make_validation_plots(opt, start, stop, db):
     """
     Make validation output plots.
 
@@ -684,24 +685,25 @@ def make_validation_plots(opt, tlm, db):
     :returns: list of plot info including plot file names
     """
     outdir = opt.outdir
-    states = get_states(tlm[0].date, tlm[-1].date, db)
+    states = get_states(start, stop, db)
     # tlm = Ska.Numpy.add_column(tlm, 'power', tlm['dp_dpa_power'])
-
-    T_dpa0 = np.mean(tlm['1dpamzt'][:10])
 
     # Create array of times at which to calculate DPA temperatures, then do it
     logger.info('Calculating DPA thermal model for validation')
 
-    model = calc_model(opt.model_spec, states, tlm[0].date, tlm[-1].date,
-                       T_dpa0)
+    model = calc_model(opt.model_spec, states, start, stop)
 
     # Interpolate states onto the tlm.date grid
-    state_vals = cmd_states.interpolate_states(states, tlm.date)
+    state_vals = cmd_states.interpolate_states(states, model.times)
     pred = {'1dpamzt': model.comp['1dpamzt'].mvals,
             'aosares1': state_vals.pitch,
             'tscpos': state_vals.simpos,
             # 'power': state_vals.power
             }
+
+    tlm = {'1dpamzt': model.comp['1dpamzt'].dvals,
+           'aosares1': model.comp['pitch'].dvals,
+           'tscpos': model.comp['sim_z'].dvals}
 
     labels = {'1dpamzt': 'Degrees (C)',
               'aosares1': 'Pitch (degrees)',
@@ -728,8 +730,8 @@ def make_validation_plots(opt, tlm, db):
         fig = plt.figure(10 + fig_id, figsize=(7, 3.5))
         fig.clf()
         scale = scales.get(msid, 1.0)
-        ticklocs, fig, ax = plot_cxctime(tlm.date, tlm[msid] / scale, fig=fig,
-                                         fmt='-r')
+        ticklocs, fig, ax = plot_cxctime(model.times, tlm[msid] / scale,
+                                         fig=fig, fmt='-r')
         ticklocs, fig, ax = plot_cxctime(model.times, pred[msid] / scale,
                                          fig=fig, fmt='-b')
         ax.set_title(msid.upper() + ' validation')
