@@ -29,7 +29,6 @@ from Chandra.Time import DateTime
 
 import Chandra.cmd_states as cmd_states
 import xija
-import characteristics
 
 # Matplotlib setup
 # Use Agg backend for command-line (non-interactive) operation
@@ -42,11 +41,18 @@ import Ska.Matplotlib
 MSID = dict(dpa='1DPAMZT')
 YELLOW = dict(dpa=35.0)
 MARGIN = dict(dpa=2.5)
-
+VALIDATION_LIMITS = {'1DPAMZT': [(1, 7.5),
+                                 (50, 2.5),
+                                 (99, 7.5)],
+                     'AOSARES1': [(1, 2.5),
+                                  (99, 2.5)],
+                     'TSCPOS': [(1, 2.0),
+                                (99, 2.0)]
+                     }
 VERSION = 1
 
-TASK_DATA = os.path.join(os.environ['SKA'], 'data', 'psmc')
-URL = "http://cxc.harvard.edu/mta/ASPECT/psmc_daily_check"
+TASK_DATA = os.path.dirname(__file__)
+URL = "http://cxc.harvard.edu/mta/ASPECT/dpa_daily_check"
 
 logger = logging.getLogger('dpa_check')
 
@@ -60,18 +66,9 @@ def get_options():
                       help="Output directory")
     parser.add_option("--oflsdir",
                        help="Load products OFLS directory")
-    parser.add_option("--power",
-                      type='float',
-                      help="Starting DPA power (watts)")
-    parser.add_option("--simpos",
-                      type='float',
-                      help="Starting SIM-Z position (steps)")
-    parser.add_option("--pitch",
-                      type='float',
-                      help="Starting pitch (deg)")
-    parser.add_option("--T_dpa",
-                      type='float',
-                      help="Starting 1dpamzt temperature (degC)")
+    parser.add_option("--model-spec",
+                      default=os.path.join(TASK_DATA, 'dpa_model_spec.json'),
+                       help="DPA model specification file")
     parser.add_option("--days",
                       type='float',
                       default=21.0,
@@ -84,8 +81,33 @@ def get_options():
                       help='Enable tracebacks')
     parser.add_option("--verbose",
                       type='int',
-                      default=1,
+                      default=2,
                       help="Verbosity (0=quiet, 1=normal, 2=debug)")
+    parser.add_option("--ccd-count",
+                      type='int',
+                      default=6,
+                      help="Initial number of CCDs (default=6)")
+    parser.add_option("--fep-count",
+                      type='int',
+                      default=6,
+                      help="Initial number of FEPs (default=6)")
+    parser.add_option("--vid-board",
+                      type='int',
+                      default=1,
+                      help="Initial state of ACIS vid_board (default=1)")
+    parser.add_option("--clocking",
+                      type='int',
+                      default=1,
+                      help="Initial state of ACIS clocking (default=1)")
+    parser.add_option("--simpos",
+                      type='float',
+                      help="Starting SIM-Z position (steps)")
+    parser.add_option("--pitch",
+                      type='float',
+                      help="Starting pitch (deg)")
+    parser.add_option("--T_dpa",
+                      type='float',
+                      help="Starting 1DPAMZT temperature (degC)")
     parser.add_option("--version",
                       action='store_true',
                       help="Print version")
@@ -104,16 +126,15 @@ def main(opt):
     proc = dict(run_user=os.environ['USER'],
                 run_time=time.ctime(),
                 errors=[],
-                dea_limit=YELLOW['dea'] - MARGIN['dea'],
-                pin_limit=YELLOW['pin'] - MARGIN['pin'],
+                dpa_limit=YELLOW['dpa'] - MARGIN['dpa'],
                 )
     versionfile = os.path.join(os.path.dirname(__file__), 'VERSION')
     logger.info('##############################'
                 '#######################################')
-    logger.info('# psmc_check.py run at %s by %s'
+    logger.info('# dpa_check.py run at %s by %s'
                 % (proc['run_time'], proc['run_user']))
-    logger.info('# psmc_check version = ' + open(versionfile).read().strip())
-    logger.info('# characteristics version = %s' % characteristics.VERSION)
+    logger.info('# dpa_check version = ' + open(versionfile).read().strip())
+    logger.info('# model_spec file = %s' % os.path.abspath(opt.model_spec))
     logger.info('###############################'
                 '######################################\n')
 
@@ -124,7 +145,7 @@ def main(opt):
     db = Ska.DBI.DBI(dbi='sybase', server='sybase', user='aca_read',
                      database='aca')
 
-    tnow = DateTime(opt.run_start_time).secs
+    tnow = DateTime(opt.run_start).secs
     if opt.oflsdir is not None:
         # Get tstart, tstop, commands from backstop file in opt.oflsdir
         bs_cmds = get_bs_cmds(opt.oflsdir)
@@ -138,11 +159,9 @@ def main(opt):
 
     # Get temperature telemetry for 3 weeks prior to min(tstart, NOW)
     tlm = get_telem_values(min(tstart, tnow),
-                           ['1pdeaat', '1pin1at',
+                           ['1dpamzt',
                             'sim_z', 'aosares1',
-                            '1de28avo', '1deicacu',
-                            '1dp28avo', '1dpicacu',
-                            '1dp28bvo', '1dpicbcu'],
+                            'dp_dpa_power'],
                            days=opt.days,
                            name_map={'sim_z': 'tscpos'})
     tlm['tscpos'] = tlm['tscpos'] * -397.7225924607
@@ -176,11 +195,29 @@ def main(opt):
                 plots_validation=plots_validation)
 
 
+def calc_model(model_spec, states, start, stop, T_dpa0):
+    model = xija.ThermalModel('dpa', start=start, stop=stop,
+                              model_spec=model_spec)
+
+    times = np.array([states['tstart'], states['tstop']])
+    model.comp['sim_z'].set_data(states['simpos'], times)
+    model.comp['eclipse'].set_data(False)
+    model.comp['1dpamzt'].set_data(T_dpa0)
+
+    for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking', 'pitch'):
+        model.comp[name].set_data(states[name], times)
+
+    model.make()
+    model.calc()
+    return model
+
+
 def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
 
     # Try to make initial state0 from cmd line options
-    state0 = dict((x, getattr(opt, x)) for x in ('pitch', 'simpos',
-                                                 'power', 'T_dea', 'T_pin'))
+    state0 = dict((x, getattr(opt, x))
+                  for x in ('pitch', 'simpos', 'ccd_count', 'fep_count',
+                            'vid_board', 'clocking', 'T_dpa'))
     state0.update({'tstart': tstart - 30,
                    'tstop': tstart,
                    'datestart': DateTime(tstart - 30).date,
@@ -193,37 +230,31 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
         state0 = cmd_states.get_state0(tlm[-5].date, db, datepar='datestart')
         ok = ((tlm.date >= state0['tstart'] - 150) &
               (tlm.date <= state0['tstart'] + 150))
-        state0.update({'T_dea': np.mean(tlm['1pdeaat'][ok]),
-                       'T_pin': np.mean(tlm['1pin1at'][ok])})
+        state0.update({'T_dpa': np.mean(tlm['1dpamzt'][ok])})
 
     logger.debug('state0 at %s is\n%s' % (DateTime(state0['tstart']).date,
                                            pformat(state0)))
 
-    if opt.old_cmds:
-        cmds_datestart = DateTime(state0['tstop']).date
-        cmds_datestop = DateTime(bs_cmds[0]['time']).date
-        db_cmds = cmd_states.get_cmds(cmds_datestart, cmds_datestop, db)
-    else:
-        # Get commands after end of state0 through first backstop command time
-        cmds_datestart = state0['datestop']
-        cmds_datestop = bs_cmds[0]['date']
+    # Get commands after end of state0 through first backstop command time
+    cmds_datestart = state0['datestop']
+    cmds_datestop = bs_cmds[0]['date']
 
-        # Get timeline load segments including state0 and beyond.
-        timeline_loads = db.fetchall("""SELECT * from timeline_loads
-                                     WHERE datestop > '%s'
-                                     and datestart < '%s'"""
-                                     % (cmds_datestart, cmds_datestop))
-        logger.info('Found {} timeline_loads  after {}'.format(
-                len(timeline_loads), cmds_datestart))
+    # Get timeline load segments including state0 and beyond.
+    timeline_loads = db.fetchall("""SELECT * from timeline_loads
+                                 WHERE datestop > '%s'
+                                 and datestart < '%s'"""
+                                 % (cmds_datestart, cmds_datestop))
+    logger.info('Found {} timeline_loads  after {}'.format(
+            len(timeline_loads), cmds_datestart))
 
-        # Get cmds since datestart within timeline_loads
-        db_cmds = cmd_states.get_cmds(cmds_datestart, db=db, update_db=False,
-                                      timeline_loads=timeline_loads)
+    # Get cmds since datestart within timeline_loads
+    db_cmds = cmd_states.get_cmds(cmds_datestart, db=db, update_db=False,
+                                  timeline_loads=timeline_loads)
 
-        # Delete non-load cmds that are within the backstop time span
-        # => Keep if timeline_id is not None or date < bs_cmds[0]['time']
-        db_cmds = [x for x in db_cmds if (x['timeline_id'] is not None or
-                                          x['time'] < bs_cmds[0]['time'])]
+    # Delete non-load cmds that are within the backstop time span
+    # => Keep if timeline_id is not None or date < bs_cmds[0]['time']
+    db_cmds = [x for x in db_cmds if (x['timeline_id'] is not None or
+                                      x['time'] < bs_cmds[0]['time'])]
 
     logger.info('Got %d cmds from database between %s and %s' %
                   (len(db_cmds), cmds_datestart, cmds_datestop))
@@ -235,27 +266,23 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     logger.info('Found %d commanded states from %s to %s' %
                  (len(states), states[0]['datestart'], states[-1]['datestop']))
 
-    # Add power column based on ACIS commanding in states
-    states = Ska.Numpy.add_column(states, 'power', get_power(states))
+    # Create array of times at which to calculate DPA temps, then do it.
+    logger.info('Calculating DPA thermal model')
 
-    # Create array of times at which to calculate PSMC temps, then do it.
-    times = np.arange(state0['tstart'], tstop, opt.dt)
-    logger.info('Calculating PSMC thermal model')
-    T_pin, T_dea = twodof.calc_twodof_model(states, state0['T_pin'],
-                                            state0['T_dea'], times,
-                                            characteristics.model_par)
+    model = calc_model(opt.model_spec, states, state0['tstart'], tstop,
+                       state0['T_dpa'])
 
-    # Make the PSMC limit check plots and data files
+    # Make the DPA limit check plots and data files
     plt.rc("axes", labelsize=10, titlesize=12)
     plt.rc("xtick", labelsize=10)
     plt.rc("ytick", labelsize=10)
-    temps = dict(dea=T_dea, pin=T_pin)
-    plots = make_check_plots(opt, states, times, temps, tstart)
-    viols = make_viols(opt, states, times, temps)
-    write_states(opt, states)
-    write_temps(opt, times, temps)
+    temps = {'dpa': model.comp['1dpamzt'].mvals}
+    plots = make_check_plots(opt, states, model.times, temps, tstart)
+    viols = make_viols(opt, states, model.times, temps)
+    # write_states(opt, states)
+    # write_temps(opt, times, temps)
 
-    return dict(opt=opt, states=states, times=times, temps=temps,
+    return dict(opt=opt, states=states, times=model.times, temps=temps,
                plots=plots, viols=viols)
 
 
@@ -267,22 +294,21 @@ def make_validation_viols(plots_validation):
 
     logger.info('Checking for validation violations')
 
-    from characteristics import validation_limits
     viols = []
 
     for plot in plots_validation:
         # 'plot' is actually a structure with plot info and stats about the
         #  plotted data for a particular MSID.  'msid' can be a real MSID
-        #  (1PDEAAT) or pseudo like 'POWER'
+        #  (1DPAMZT) or pseudo like 'POWER'
         msid = plot['msid']
 
         # Make sure validation limits exist for this MSID
-        if msid not in validation_limits:
+        if msid not in VALIDATION_LIMITS:
             continue
 
         # Cycle through defined quantiles (e.g. 99 for 99%) and corresponding
         # limit values for this MSID.
-        for quantile, limit in validation_limits[msid]:
+        for quantile, limit in VALIDATION_LIMITS[msid]:
             # Get the quantile statistic as calculated when making plots
             msid_quantile_value = float(plot['quant%02d' % quantile])
 
@@ -356,14 +382,14 @@ def rst_to_html(opt, proc):
     dirname = os.path.dirname(docutils.writers.html4css1.__file__)
     shutil.copy2(os.path.join(dirname, 'html4css1.css'), opt.outdir)
 
-    shutil.copy2(os.path.join(TASK_DATA, 'psmc_check.css'), opt.outdir)
+    shutil.copy2(os.path.join(TASK_DATA, 'dpa_check.css'), opt.outdir)
 
     spawn = Ska.Shell.Spawn(stdout=None)
     infile = os.path.join(opt.outdir, 'index.rst')
     outfile = os.path.join(opt.outdir, 'index.html')
     status = spawn.run(['rst2html.py',
                         '--stylesheet-path={}'
-                        .format(os.path.join(opt.outdir, 'psmc_check.css')),
+                        .format(os.path.join(opt.outdir, 'dpa_check.css')),
                         infile, outfile])
     if status != 0:
         proc['errors'].append('rst2html.py failed with status {}: see run log'
@@ -396,7 +422,7 @@ def config_logging(outdir, verbose):
                 1: logging.INFO,
                 2: logging.DEBUG}.get(verbose, logging.INFO)
 
-    logger = logging.getLogger('psmc_check')
+    logger = logging.getLogger('dpa_check')
     logger.setLevel(loglevel)
 
     formatter = logging.Formatter('%(message)s')
@@ -422,8 +448,7 @@ def write_states(opt, states):
            'tstop': '%.2f',
            }
     newcols = list(states.dtype.names)
-    newcols.remove('T_dea')
-    newcols.remove('T_pin')
+    newcols.remove('T_dpa')
     newstates = np.rec.fromarrays([states[x] for x in newcols], names=newcols)
     Ska.Numpy.pprint(newstates, fmt, out)
     out.close()
@@ -433,15 +458,13 @@ def write_temps(opt, times, temps):
     """Write temperature predictions to file temperatures.dat"""
     outfile = os.path.join(opt.outdir, 'temperatures.dat')
     logger.info('Writing temperatures to %s' % outfile)
-    T_dea = temps['dea']
-    T_pin = temps['pin']
-    temp_recs = [(times[i], DateTime(times[i]).date, T_dea[i], T_pin[i])
+    T_dpa = temps['dpa']
+    temp_recs = [(times[i], DateTime(times[i]).date, T_dpa[i])
                  for i in xrange(len(times))]
     temp_array = np.rec.fromrecords(
-        temp_recs, names=('time', 'date', '1pdeaat', '1pin1at'))
+        temp_recs, names=('time', 'date', '1dpamzt'))
 
-    fmt = {'1pin1at': '%.2f',
-           '1pdeaat': '%.2f',
+    fmt = {'1dpamzt': '%.2f',
            'time': '%.2f'}
     out = open(outfile, 'w')
     Ska.Numpy.pprint(temp_array, fmt, out)
@@ -555,8 +578,7 @@ def make_check_plots(opt, states, times, temps, tstart):
     :param opt: options
     :param states: commanded states
     :param times: time stamps (sec) for temperature arrays
-    :param T_pin: 1pin1at temperatures
-    :param T_dea: 1pddeat temperatures
+    :param temps: dict of temperatures
     :param tstart: load start time
     :rtype: dict of review information including plot file names
     """
@@ -566,7 +588,7 @@ def make_check_plots(opt, states, times, temps, tstart):
     load_start = Ska.Matplotlib.cxctime2plotdate([tstart])[0]
 
     logger.info('Making temperature check plots')
-    for fig_id, msid in enumerate(('dea', 'pin')):
+    for fig_id, msid in enumerate(('dpa',)):
         plots[msid] = plot_two(fig_id=fig_id + 1,
                                x=times,
                                y=temps[msid],
@@ -592,12 +614,12 @@ def make_check_plots(opt, states, times, temps, tstart):
 
     plots['pow_sim'] = plot_two(
         fig_id=3,
-        title='PSMC power and SIM-Z position',
+        title='ACIS CCDs and SIM-Z position',
         xlabel='Date',
         x=pointpair(states['tstart'], states['tstop']),
-        y=pointpair(states['power']),
-        ylabel='Power (watts)',
-        ylim=(0, 160.),
+        y=pointpair(states['ccd_count']),
+        ylabel='CCD_COUNT',
+        ylim=(-0.1, 6.1),
         x2=pointpair(states['tstart'], states['tstop']),
         y2=pointpair(states['simpos']),
         ylabel2='SIM-Z (steps)',
@@ -637,7 +659,7 @@ def get_states(datestart, datestop, db):
     logger.info('Found %d commanded states' % len(states))
 
     # Add power columns to states and tlm
-    states = Ska.Numpy.add_column(states, 'power', get_power(states))
+    # states = Ska.Numpy.add_column(states, 'power', get_power(states))
 
     # Set start and end state date/times to match telemetry span.  Extend the
     # state durations by a small amount because of a precision issue converting
@@ -663,40 +685,39 @@ def make_validation_plots(opt, tlm, db):
     """
     outdir = opt.outdir
     states = get_states(tlm[0].date, tlm[-1].date, db)
-    tlm = Ska.Numpy.add_column(tlm, 'power', smoothed_power(tlm))
+    # tlm = Ska.Numpy.add_column(tlm, 'power', tlm['dp_dpa_power'])
 
-    T_dea0 = np.mean(tlm['1pdeaat'][:10])
-    T_pin0 = np.mean(tlm['1pin1at'][:10])
+    T_dpa0 = np.mean(tlm['1dpamzt'][:10])
 
-    # Create array of times at which to calculate PSMC temperatures, then do it
-    logger.info('Calculating PSMC thermal model for validation')
-    T_pin, T_dea = twodof.calc_twodof_model(states, T_pin0, T_dea0, tlm.date,
-                                            characteristics.model_par)
+    # Create array of times at which to calculate DPA temperatures, then do it
+    logger.info('Calculating DPA thermal model for validation')
+
+    model = calc_model(opt.model_spec, states, tlm[0].date, tlm[-1].date,
+                       T_dpa0)
 
     # Interpolate states onto the tlm.date grid
     state_vals = cmd_states.interpolate_states(states, tlm.date)
-    pred = {'1pdeaat': T_dea,
-            '1pin1at': T_pin,
+    pred = {'1dpamzt': model.comp['1dpamzt'].mvals,
             'aosares1': state_vals.pitch,
             'tscpos': state_vals.simpos,
-            'power': state_vals.power}
+            # 'power': state_vals.power
+            }
 
-    labels = {'1pdeaat': 'Degrees (C)',
-              '1pin1at': 'Degrees (C)',
+    labels = {'1dpamzt': 'Degrees (C)',
               'aosares1': 'Pitch (degrees)',
               'tscpos': 'SIM-Z (steps/1000)',
-              'power': 'ACIS power (watts)'}
+              # 'power': 'ACIS power (watts)'
+              }
 
     scales = {'tscpos': 1000.}
 
-    fmts = {'1pdeaat': '%.2f',
-            '1pin1at': '%.2f',
+    fmts = {'1dpamzt': '%.2f',
             'aosares1': '%.3f',
-            'power': '%.2f',
+            # 'power': '%.2f',
             'tscpos': '%d'}
 
     plots = []
-    logger.info('Making PSMC model validation plots and quantile table')
+    logger.info('Making DPA model validation plots and quantile table')
     quantiles = (1, 5, 16, 50, 84, 95, 99)
     # store lines of quantile table in a string and write out later
     quant_table = ''
@@ -709,8 +730,8 @@ def make_validation_plots(opt, tlm, db):
         scale = scales.get(msid, 1.0)
         ticklocs, fig, ax = plot_cxctime(tlm.date, tlm[msid] / scale, fig=fig,
                                          fmt='-r')
-        ticklocs, fig, ax = plot_cxctime(tlm.date, pred[msid] / scale, fig=fig,
-                                         fmt='-b')
+        ticklocs, fig, ax = plot_cxctime(model.times, pred[msid] / scale,
+                                         fig=fig, fmt='-b')
         ax.set_title(msid.upper() + ' validation')
         ax.set_ylabel(labels[msid])
         filename = msid + '_valid.png'
@@ -750,10 +771,10 @@ def make_validation_plots(opt, tlm, db):
     f.write(quant_table)
     f.close()
 
-    # If run_start_time is specified this is likely for regression testing
+    # If run_start is specified this is likely for regression testing
     # or other debugging.  In this case write out the full predicted and
     # telemetered dataset as a pickle.
-    if opt.run_start_time:
+    if opt.run_start:
         filename = os.path.join(outdir, 'validation_data.pkl')
         logger.info('Writing validation data %s' % filename)
         f = open(filename, 'w')
@@ -802,11 +823,11 @@ def get_power(states):
     powstate = lambda x: tuple(x[col] for col in ('fep_count', 'vid_board',
                                                   'clocking'))
 
-    # psmc_power charactestic is a list of 4-tuples (fep_count vid_board
+    # dpa_power charactestic is a list of 4-tuples (fep_count vid_board
     # clocking power_avg).  Build a dict to allow access to power_avg for
     # available (fep_count vid_board clocking) combos.
     power_states = dict((row[0:3], row[3])
-                        for row in characteristics.psmc_power)
+                        for row in characteristics.dpa_power)
     try:
         powers = [power_states[powstate(x)] for x in states]
     except KeyError:
@@ -832,18 +853,6 @@ def globfile(pathglob):
         raise IOError('Multiple files matching %s' % pathglob)
     else:
         return files[0]
-
-
-def smoothed_power(tlm):
-    """Calculate the smoothed PSMC power from telemetry ``tlm``.
-    """
-    pwrdea = Ska.Numpy.smooth(tlm['1de28avo'] * tlm['1deicacu'],
-                              window_len=33, window='flat')
-    pwrdpa = Ska.Numpy.smooth(tlm['1dp28avo'] * tlm['1dpicacu']
-                              + tlm['1dp28bvo'] * tlm['1dpicbcu'],
-                               window_len=21, window='flat')
-
-    return pwrdea + pwrdpa
 
 
 if __name__ == '__main__':
