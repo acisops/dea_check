@@ -44,7 +44,7 @@ MARGIN = dict(dpa=2.5)
 VALIDATION_LIMITS = {'1DPAMZT': [(1, 7.5),
                                  (50, 2.5),
                                  (99, 7.5)],
-                     'AOSARES1': [(1, 2.5),
+                     'PITCH': [(1, 2.5),
                                   (99, 2.5)],
                      'TSCPOS': [(1, 2.0),
                                 (99, 2.0)]
@@ -163,7 +163,8 @@ def main(opt):
                             'sim_z', 'aosares1',
                             'dp_dpa_power'],
                            days=opt.days,
-                           name_map={'sim_z': 'tscpos'})
+                           name_map={'sim_z': 'tscpos',
+                                     'aosares1': 'pitch'})
     tlm['tscpos'] = tlm['tscpos'] * -397.7225924607
 
     # make predictions on oflsdir if defined
@@ -174,8 +175,7 @@ def main(opt):
                     temps=None)
 
     # Validation
-    plots_validation = make_validation_plots(opt, tlm.date[0], tlm.date[-1],
-                                             db)
+    plots_validation = make_validation_plots(opt, tlm, db)
     valid_viols = make_validation_viols(plots_validation)
     if len(valid_viols) > 0:
         # generate daily plot url if outdir in expected year/day format
@@ -228,9 +228,10 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     # cmd_state that starts within available telemetry.  Update with the
     # mean temperatures at the start of state0.
     if None in state0.values():
-        state0 = cmd_states.get_state0(tlm[-5].date, db, datepar='datestart')
-        ok = ((tlm.date >= state0['tstart'] - 150) &
-              (tlm.date <= state0['tstart'] + 150))
+        state0 = cmd_states.get_state0(tlm['date'][-5], db,
+                                       datepar='datestart')
+        ok = ((tlm['date'] >= state0['tstart'] - 150) &
+              (tlm['date'] <= state0['tstart'] + 150))
         state0.update({'T_dpa': np.mean(tlm['1dpamzt'][ok])})
 
     logger.debug('state0 at %s is\n%s' % (DateTime(state0['tstart']).date,
@@ -280,8 +281,8 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     temps = {'dpa': model.comp['1dpamzt'].mvals}
     plots = make_check_plots(opt, states, model.times, temps, tstart)
     viols = make_viols(opt, states, model.times, temps)
-    # write_states(opt, states)
-    # write_temps(opt, times, temps)
+    write_states(opt, states)
+    write_temps(opt, model.times, temps)
 
     return dict(opt=opt, states=states, times=model.times, temps=temps,
                plots=plots, viols=viols)
@@ -341,7 +342,7 @@ def get_bs_cmds(oflsdir):
     return bs_cmds
 
 
-def get_telem_values(tstart, msids, days=14, dt=32.8, name_map={}):
+def get_telem_values(tstart, msids, days=14, name_map={}):
     """
     Fetch last ``days`` of available ``msids`` telemetry values before
     time ``tstart``.
@@ -357,20 +358,21 @@ def get_telem_values(tstart, msids, days=14, dt=32.8, name_map={}):
     start = DateTime(tstart - days * 86400).date
     stop = DateTime(tstart).date
     logger.info('Fetching telemetry between %s and %s' % (start, stop))
-    msidset = fetch.Msidset(msids, start, stop)
+    msidset = fetch.MSIDset(msids, start, stop, stat='5min')
     start = max(x.times[0] for x in msidset.values())
     stop = min(x.times[-1] for x in msidset.values())
-    msidset.interpolate(dt, start, stop)
+    msidset.interpolate(328.0, start, stop + 1)  # 328 for '5min' stat
 
-    # Finished when we found at least 10 good records (5 mins)
-    if len(msidset.times) < 10:
+    # Finished when we found at least 4 good records (20 mins)
+    if len(msidset.times) < 4:
         raise ValueError('Found no telemetry within %d days of %s'
                          % (days, str(tstart)))
 
     outnames = ['date'] + [name_map.get(x, x) for x in msids]
-    out = np.rec.fromarrays([msidset.times] +
-                            [msidset[x].vals for x in msids],
-                            names=outnames)
+    vals = {name_map.get(x, x): msidset[x].vals for x in msids}
+    vals['date'] = msidset.times
+    out = Ska.Numpy.structured_array(vals, colnames=outnames)
+
     return out
 
 
@@ -563,7 +565,7 @@ def plot_two(fig_id, x, y, x2, y2,
     ax2.set_ylabel(ylabel2, color=color2)
     ax2.xaxis.set_visible(False)
 
-    ticklocs = Ska.Matplotlib.set_time_ticks(ax)
+    Ska.Matplotlib.set_time_ticks(ax)
     [label.set_rotation(30) for label in ax.xaxis.get_ticklabels()]
     [label.set_color(color2) for label in ax2.yaxis.get_ticklabels()]
 
@@ -675,7 +677,7 @@ def get_states(datestart, datestop, db):
     return states
 
 
-def make_validation_plots(opt, start, stop, db):
+def make_validation_plots(opt, tlm, db):
     """
     Make validation output plots.
 
@@ -685,8 +687,9 @@ def make_validation_plots(opt, start, stop, db):
     :returns: list of plot info including plot file names
     """
     outdir = opt.outdir
+    start = tlm['date'][0]
+    stop = tlm['date'][-1]
     states = get_states(start, stop, db)
-    # tlm = Ska.Numpy.add_column(tlm, 'power', tlm['dp_dpa_power'])
 
     # Create array of times at which to calculate DPA temperatures, then do it
     logger.info('Calculating DPA thermal model for validation')
@@ -694,28 +697,25 @@ def make_validation_plots(opt, start, stop, db):
     model = calc_model(opt.model_spec, states, start, stop)
 
     # Interpolate states onto the tlm.date grid
-    state_vals = cmd_states.interpolate_states(states, model.times)
+    # state_vals = cmd_states.interpolate_states(states, model.times)
     pred = {'1dpamzt': model.comp['1dpamzt'].mvals,
-            'aosares1': state_vals.pitch,
-            'tscpos': state_vals.simpos,
-            # 'power': state_vals.power
+            'pitch': model.comp['pitch'].mvals,
+            'tscpos': model.comp['sim_z'].mvals
             }
 
-    tlm = {'1dpamzt': model.comp['1dpamzt'].dvals,
-           'aosares1': model.comp['pitch'].dvals,
-           'tscpos': model.comp['sim_z'].dvals}
+    idxs = Ska.Numpy.interpolate(np.arange(len(tlm)), tlm['date'], model.times,
+                                 method='nearest')
+    tlm = tlm[idxs]
 
     labels = {'1dpamzt': 'Degrees (C)',
-              'aosares1': 'Pitch (degrees)',
+              'pitch': 'Pitch (degrees)',
               'tscpos': 'SIM-Z (steps/1000)',
-              # 'power': 'ACIS power (watts)'
               }
 
     scales = {'tscpos': 1000.}
 
     fmts = {'1dpamzt': '%.2f',
-            'aosares1': '%.3f',
-            # 'power': '%.2f',
+            'pitch': '%.3f',
             'tscpos': '%d'}
 
     plots = []
@@ -743,7 +743,11 @@ def make_validation_plots(opt, start, stop, db):
         plot['lines'] = filename
 
         # Make quantiles
-        diff = np.sort(tlm[msid] - pred[msid])
+        if msid == '1dpamzt':
+            ok = tlm[msid] > 20.0
+        else:
+            ok = np.ones(len(tlm[msid]), dtype=bool)
+        diff = np.sort(tlm[msid][ok] - pred[msid][ok])
         quant_line = "%s" % msid
         for quant in quantiles:
             quant_val = diff[(len(diff) * quant) // 100]
