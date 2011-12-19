@@ -28,8 +28,6 @@ import Ska.engarchive.fetch_sci as fetch
 from Chandra.Time import DateTime
 
 import Chandra.cmd_states as cmd_states
-import xija
-
 # Matplotlib setup
 # Use Agg backend for command-line (non-interactive) operation
 import matplotlib
@@ -37,6 +35,8 @@ if __name__ == '__main__':
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import Ska.Matplotlib
+
+import xija
 
 MSID = dict(dpa='1DPAMZT')
 YELLOW = dict(dpa=35.0)
@@ -81,7 +81,7 @@ def get_options():
                       help='Enable tracebacks')
     parser.add_option("--verbose",
                       type='int',
-                      default=2,
+                      default=1,
                       help="Verbosity (0=quiet, 1=normal, 2=debug)")
     parser.add_option("--ccd-count",
                       type='int',
