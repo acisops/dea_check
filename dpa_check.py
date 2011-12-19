@@ -41,21 +41,22 @@ import xija
 MSID = dict(dpa='1DPAMZT')
 YELLOW = dict(dpa=35.0)
 MARGIN = dict(dpa=2.5)
-VALIDATION_LIMITS = {'1DPAMZT': [(1, 7.5),
-                                 (50, 2.5),
-                                 (99, 7.5)],
-                     'PITCH': [(1, 2.5),
-                                  (99, 2.5)],
-                     'TSCPOS': [(1, 2.0),
-                                (99, 2.0)]
+VALIDATION_LIMITS = {'1DPAMZT': [(1, 2.5),
+                                 (50, 1.0),
+                                 (99, 2.5)],
+                     'PITCH': [(1, 3.0),
+                                  (99, 3.0)],
+                     'TSCPOS': [(1, 2.5),
+                                (99, 2.5)]
                      }
-VERSION = 1
 
 TASK_DATA = os.path.dirname(__file__)
 URL = "http://cxc.harvard.edu/mta/ASPECT/dpa_daily_check"
 
 logger = logging.getLogger('dpa_check')
 
+_versionfile = os.path.join(os.path.dirname(__file__), 'VERSION')
+VERSION = open(_versionfile).read().strip()
 
 def get_options():
     from optparse import OptionParser
@@ -100,12 +101,14 @@ def get_options():
                       default=1,
                       help="Initial state of ACIS clocking (default=1)")
     parser.add_option("--simpos",
+                      default=75616,
                       type='float',
                       help="Starting SIM-Z position (steps)")
     parser.add_option("--pitch",
+                      default=150.0,
                       type='float',
                       help="Starting pitch (deg)")
-    parser.add_option("--T_dpa",
+    parser.add_option("--T-dpa",
                       type='float',
                       help="Starting 1DPAMZT temperature (degC)")
     parser.add_option("--version",
@@ -128,12 +131,11 @@ def main(opt):
                 errors=[],
                 dpa_limit=YELLOW['dpa'] - MARGIN['dpa'],
                 )
-    versionfile = os.path.join(os.path.dirname(__file__), 'VERSION')
     logger.info('##############################'
                 '#######################################')
     logger.info('# dpa_check.py run at %s by %s'
                 % (proc['run_time'], proc['run_user']))
-    logger.info('# dpa_check version = ' + open(versionfile).read().strip())
+    logger.info('# dpa_check version = {}'.format(VERSION))
     logger.info('# model_spec file = %s' % os.path.abspath(opt.model_spec))
     logger.info('###############################'
                 '######################################\n')
@@ -222,7 +224,10 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     state0.update({'tstart': tstart - 30,
                    'tstop': tstart,
                    'datestart': DateTime(tstart - 30).date,
-                   'datestop': DateTime(tstart).date})
+                   'datestop': DateTime(tstart).date,
+                   'q1': 0.0, 'q2': 0.0, 'q3': 0.0, 'q4': 1.0,
+                   }
+                  )
 
     # If cmd lines options were not fully specified then get state0 as last
     # cmd_state that starts within available telemetry.  Update with the
@@ -233,6 +238,12 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
         ok = ((tlm['date'] >= state0['tstart'] - 150) &
               (tlm['date'] <= state0['tstart'] + 150))
         state0.update({'T_dpa': np.mean(tlm['1dpamzt'][ok])})
+
+    # TEMPORARY HACK: core model doesn't actually support predictive
+    # active heater yet.  Initial temperature determines active heater
+    # state for predictions now.
+    if state0['T_dpa'] < 15:
+        state0['T_dpa'] = 15.0
 
     logger.debug('state0 at %s is\n%s' % (DateTime(state0['tstart']).date,
                                            pformat(state0)))
@@ -554,6 +565,7 @@ def plot_two(fig_id, x, y, x2, y2,
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
+    ax.grid()
 
     ax2 = ax.twinx()
 
@@ -736,6 +748,7 @@ def make_validation_plots(opt, tlm, db):
                                          fig=fig, fmt='-b')
         ax.set_title(msid.upper() + ' validation')
         ax.set_ylabel(labels[msid])
+        ax.grid()
         filename = msid + '_valid.png'
         outfile = os.path.join(outdir, filename)
         logger.info('Writing plot file %s' % outfile)

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+eval `/proj/sot/ska/bin/flt_envs -shell sh`
+exec /proj/sot/ska/share/dpa/dpa_check.py "$@"
+
+exit 1

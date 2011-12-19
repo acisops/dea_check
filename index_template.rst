@@ -50,6 +50,8 @@ DPA Model Validation
 MSID quantiles
 ---------------
 
+Note: DPA quantiles are calculated using only points where 1DPAMZT > 20 degC.
+
 .. csv-table:: 
    :header: "MSID", "1%", "5%", "16%", "50%", "84%", "95%", "99%"
    :widths: 15, 10, 10, 10, 10, 10, 10, 10
@@ -80,6 +82,9 @@ No Validation Violations
 {% for plot in plots_validation %}
 {{ plot.msid }}
 -----------------------
+
+Note: DPA residual histograms include only points where 1DPAMZT > 20 degC.
+
 Red = telemetry, blue = model
 
 .. image:: {{plot.lines}}
