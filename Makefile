@@ -40,5 +40,5 @@ install:
 	rsync --times --cvs-exclude $(BIN) $(INSTALL_BIN)/
 	rsync --times --cvs-exclude $(SHARE) $(INSTALL_SHARE)/
 	rsync --times --cvs-exclude $(DATA) $(INSTALL_DATA)/
-	rsync --archive --times --cvs-exclude $(DOC)/ $(INSTALL_DOC)/
+	rsync --recursive --links --times -D --cvs-exclude $(DOC)/ $(INSTALL_DOC)/
 
