@@ -235,8 +235,8 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     if None in state0.values():
         state0 = cmd_states.get_state0(tlm['date'][-5], db,
                                        datepar='datestart')
-        ok = ((tlm['date'] >= state0['tstart'] - 150) &
-              (tlm['date'] <= state0['tstart'] + 150))
+        ok = ((tlm['date'] >= state0['tstart'] - 700) &
+              (tlm['date'] <= state0['tstart'] + 700))
         state0.update({'T_dpa': np.mean(tlm['1dpamzt'][ok])})
 
     # TEMPORARY HACK: core model doesn't actually support predictive
