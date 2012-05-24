@@ -37,8 +37,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'dpa'
-copyright = u'2011, Tom Aldcroft'
+project = u'dea'
+copyright = u'2012, Nancy RA. Wolk'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -158,7 +158,7 @@ html_show_sourcelink = False
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'dpadoc'
+htmlhelp_basename = 'deadoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -172,8 +172,8 @@ htmlhelp_basename = 'dpadoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'dpa.tex', u'DPA Documentation',
-   u'Tom Aldcroft', 'manual'),
+  ('index', 'dea.tex', u'DEA Documentation',
+   u'Nancy RA. Wolk', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
