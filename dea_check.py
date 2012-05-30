@@ -2,11 +2,11 @@
 
 """
 ========================
-dpa_check
+dea_check
 ========================
 
 This code generates backstop load review outputs for checking the ACIS
-DPA temperature 1DPAMZT.  It also generates DPA model validation
+DEA temperature 1DEAMZT.  It also generates DEA model validation
 plots comparing predicted values to telemetry for the previous three weeks.
 """
 
@@ -38,10 +38,10 @@ import Ska.Matplotlib
 
 import xija
 
-MSID = dict(dpa='1DPAMZT')
-YELLOW = dict(dpa=35.0)
-MARGIN = dict(dpa=2.5)
-VALIDATION_LIMITS = {'1DPAMZT': [(1, 2.5),
+MSID = dict(dea='1DEAMZT')
+YELLOW = dict(dea=35.0)
+MARGIN = dict(dea=2.5)
+VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.5),
                                  (50, 1.0),
                                  (99, 2.5)],
                      'PITCH': [(1, 3.0),
@@ -51,9 +51,9 @@ VALIDATION_LIMITS = {'1DPAMZT': [(1, 2.5),
                      }
 
 TASK_DATA = os.path.dirname(__file__)
-URL = "http://cxc.harvard.edu/mta/ASPECT/dpa_daily_check"
+URL = "http://cxc.harvard.edu/mta/ASPECT/dea_daily_check"
 
-logger = logging.getLogger('dpa_check')
+logger = logging.getLogger('dea_check')
 
 _versionfile = os.path.join(os.path.dirname(__file__), 'VERSION')
 VERSION = open(_versionfile).read().strip()
@@ -68,8 +68,8 @@ def get_options():
     parser.add_option("--oflsdir",
                        help="Load products OFLS directory")
     parser.add_option("--model-spec",
-                      default=os.path.join(TASK_DATA, 'dpa_model_spec.json'),
-                       help="DPA model specification file")
+                      default=os.path.join(TASK_DATA, 'dea_model_spec.json'),
+                       help="DEA model specification file")
     parser.add_option("--days",
                       type='float',
                       default=21.0,
@@ -108,9 +108,9 @@ def get_options():
                       default=150.0,
                       type='float',
                       help="Starting pitch (deg)")
-    parser.add_option("--T-dpa",
+    parser.add_option("--T-dea",
                       type='float',
-                      help="Starting 1DPAMZT temperature (degC)")
+                      help="Starting 1DEAMZT temperature (degC)")
     parser.add_option("--version",
                       action='store_true',
                       help="Print version")
@@ -129,13 +129,13 @@ def main(opt):
     proc = dict(run_user=os.environ['USER'],
                 run_time=time.ctime(),
                 errors=[],
-                dpa_limit=YELLOW['dpa'] - MARGIN['dpa'],
+                dea_limit=YELLOW['dea'] - MARGIN['dea'],
                 )
     logger.info('##############################'
                 '#######################################')
-    logger.info('# dpa_check.py run at %s by %s'
+    logger.info('# dea_check.py run at %s by %s'
                 % (proc['run_time'], proc['run_user']))
-    logger.info('# dpa_check version = {}'.format(VERSION))
+    logger.info('# dea_check version = {}'.format(VERSION))
     logger.info('# model_spec file = %s' % os.path.abspath(opt.model_spec))
     logger.info('###############################'
                 '######################################\n')
@@ -161,7 +161,7 @@ def main(opt):
 
     # Get temperature telemetry for 3 weeks prior to min(tstart, NOW)
     tlm = get_telem_values(min(tstart, tnow),
-                           ['1dpamzt',
+                           ['1deamzt',
                             'sim_z', 'aosares1',
                             'dp_dpa_power'],
                            days=opt.days,
@@ -198,15 +198,14 @@ def main(opt):
                 plots_validation=plots_validation)
 
 
-def calc_model(model_spec, states, start, stop, T_dpa=None, T_dpa_times=None):
-    model = xija.ThermalModel('dpa', start=start, stop=stop,
+def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
+    model = xija.ThermalModel('dea', start=start, stop=stop,
                               model_spec=model_spec)
 
     times = np.array([states['tstart'], states['tstop']])
     model.comp['sim_z'].set_data(states['simpos'], times)
     model.comp['eclipse'].set_data(False)
-    model.comp['1dpamzt'].set_data(T_dpa, T_dpa_times)
-
+    model.comp['1deamzt'].set_data(T_dea, T_dea_times)
     for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking', 'pitch'):
         model.comp[name].set_data(states[name], times)
 
@@ -216,11 +215,13 @@ def calc_model(model_spec, states, start, stop, T_dpa=None, T_dpa_times=None):
 
 
 def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
-
+    print "In make_week_predict"
+    
     # Try to make initial state0 from cmd line options
     state0 = dict((x, getattr(opt, x))
                   for x in ('pitch', 'simpos', 'ccd_count', 'fep_count',
-                            'vid_board', 'clocking', 'T_dpa'))
+                            'vid_board', 'clocking', 'T_dea'))
+    print state0
     state0.update({'tstart': tstart - 30,
                    'tstop': tstart,
                    'datestart': DateTime(tstart - 30).date,
@@ -228,7 +229,7 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
                    'q1': 0.0, 'q2': 0.0, 'q3': 0.0, 'q4': 1.0,
                    }
                   )
-
+    print state0
     # If cmd lines options were not fully specified then get state0 as last
     # cmd_state that starts within available telemetry.  Update with the
     # mean temperatures at the start of state0.
@@ -237,13 +238,13 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
                                        datepar='datestart')
         ok = ((tlm['date'] >= state0['tstart'] - 700) &
               (tlm['date'] <= state0['tstart'] + 700))
-        state0.update({'T_dpa': np.mean(tlm['1dpamzt'][ok])})
+        state0.update({'T_dea': np.mean(tlm['1deamzt'][ok])})
 
     # TEMPORARY HACK: core model doesn't actually support predictive
     # active heater yet.  Initial temperature determines active heater
     # state for predictions now.
-    if state0['T_dpa'] < 15:
-        state0['T_dpa'] = 15.0
+    if state0['T_dea'] < 15:
+        state0['T_dea'] = 15.0
 
     logger.debug('state0 at %s is\n%s' % (DateTime(state0['tstart']).date,
                                            pformat(state0)))
@@ -279,17 +280,17 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
     logger.info('Found %d commanded states from %s to %s' %
                  (len(states), states[0]['datestart'], states[-1]['datestop']))
 
-    # Create array of times at which to calculate DPA temps, then do it.
-    logger.info('Calculating DPA thermal model')
-
+    # Create array of times at which to calculate DEA temps, then do it.
+    logger.info('Calculating DEA thermal model')
+    print state0
     model = calc_model(opt.model_spec, states, state0['tstart'], tstop,
-                       state0['T_dpa'])
+                       state0['T_dea'])
 
-    # Make the DPA limit check plots and data files
+    # Make the DEA limit check plots and data files
     plt.rc("axes", labelsize=10, titlesize=12)
     plt.rc("xtick", labelsize=10)
     plt.rc("ytick", labelsize=10)
-    temps = {'dpa': model.comp['1dpamzt'].mvals}
+    temps = {'dea': model.comp['1deamzt'].mvals}
     plots = make_check_plots(opt, states, model.times, temps, tstart)
     viols = make_viols(opt, states, model.times, temps)
     write_states(opt, states)
@@ -312,7 +313,7 @@ def make_validation_viols(plots_validation):
     for plot in plots_validation:
         # 'plot' is actually a structure with plot info and stats about the
         #  plotted data for a particular MSID.  'msid' can be a real MSID
-        #  (1DPAMZT) or pseudo like 'POWER'
+        #  (1DEAMZT) or pseudo like 'POWER'
         msid = plot['msid']
 
         # Make sure validation limits exist for this MSID
@@ -396,14 +397,14 @@ def rst_to_html(opt, proc):
     dirname = os.path.dirname(docutils.writers.html4css1.__file__)
     shutil.copy2(os.path.join(dirname, 'html4css1.css'), opt.outdir)
 
-    shutil.copy2(os.path.join(TASK_DATA, 'dpa_check.css'), opt.outdir)
+    shutil.copy2(os.path.join(TASK_DATA, 'dea_check.css'), opt.outdir)
 
     spawn = Ska.Shell.Spawn(stdout=None)
     infile = os.path.join(opt.outdir, 'index.rst')
     outfile = os.path.join(opt.outdir, 'index.html')
     status = spawn.run(['rst2html.py',
                         '--stylesheet-path={}'
-                        .format(os.path.join(opt.outdir, 'dpa_check.css')),
+                        .format(os.path.join(opt.outdir, 'dea_check.css')),
                         infile, outfile])
     if status != 0:
         proc['errors'].append('rst2html.py failed with status {}: see run log'
@@ -436,7 +437,7 @@ def config_logging(outdir, verbose):
                 1: logging.INFO,
                 2: logging.DEBUG}.get(verbose, logging.INFO)
 
-    logger = logging.getLogger('dpa_check')
+    logger = logging.getLogger('dea_check')
     logger.setLevel(loglevel)
 
     formatter = logging.Formatter('%(message)s')
@@ -462,7 +463,7 @@ def write_states(opt, states):
            'tstop': '%.2f',
            }
     newcols = list(states.dtype.names)
-    newcols.remove('T_dpa')
+    newcols.remove('T_dea')
     newstates = np.rec.fromarrays([states[x] for x in newcols], names=newcols)
     Ska.Numpy.pprint(newstates, fmt, out)
     out.close()
@@ -472,13 +473,13 @@ def write_temps(opt, times, temps):
     """Write temperature predictions to file temperatures.dat"""
     outfile = os.path.join(opt.outdir, 'temperatures.dat')
     logger.info('Writing temperatures to %s' % outfile)
-    T_dpa = temps['dpa']
-    temp_recs = [(times[i], DateTime(times[i]).date, T_dpa[i])
+    T_dea = temps['dea']
+    temp_recs = [(times[i], DateTime(times[i]).date, T_dea[i])
                  for i in xrange(len(times))]
     temp_array = np.rec.fromrecords(
-        temp_recs, names=('time', 'date', '1dpamzt'))
+        temp_recs, names=('time', 'date', '1deamzt'))
 
-    fmt = {'1dpamzt': '%.2f',
+    fmt = {'1deamzt': '%.2f',
            'time': '%.2f'}
     out = open(outfile, 'w')
     Ska.Numpy.pprint(temp_array, fmt, out)
@@ -603,7 +604,7 @@ def make_check_plots(opt, states, times, temps, tstart):
     load_start = Ska.Matplotlib.cxctime2plotdate([tstart])[0]
 
     logger.info('Making temperature check plots')
-    for fig_id, msid in enumerate(('dpa',)):
+    for fig_id, msid in enumerate(('dea',)):
         plots[msid] = plot_two(fig_id=fig_id + 1,
                                x=times,
                                y=temps[msid],
@@ -703,14 +704,14 @@ def make_validation_plots(opt, tlm, db):
     stop = tlm['date'][-1]
     states = get_states(start, stop, db)
 
-    # Create array of times at which to calculate DPA temperatures, then do it
-    logger.info('Calculating DPA thermal model for validation')
+    # Create array of times at which to calculate DEA temperatures, then do it
+    logger.info('Calculating DEA thermal model for validation')
 
     model = calc_model(opt.model_spec, states, start, stop)
 
     # Interpolate states onto the tlm.date grid
     # state_vals = cmd_states.interpolate_states(states, model.times)
-    pred = {'1dpamzt': model.comp['1dpamzt'].mvals,
+    pred = {'1deamzt': model.comp['1deamzt'].mvals,
             'pitch': model.comp['pitch'].mvals,
             'tscpos': model.comp['sim_z'].mvals
             }
@@ -719,19 +720,19 @@ def make_validation_plots(opt, tlm, db):
                                  method='nearest')
     tlm = tlm[idxs]
 
-    labels = {'1dpamzt': 'Degrees (C)',
+    labels = {'1deamzt': 'Degrees (C)',
               'pitch': 'Pitch (degrees)',
               'tscpos': 'SIM-Z (steps/1000)',
               }
 
     scales = {'tscpos': 1000.}
 
-    fmts = {'1dpamzt': '%.2f',
+    fmts = {'1deamzt': '%.2f',
             'pitch': '%.3f',
             'tscpos': '%d'}
 
     plots = []
-    logger.info('Making DPA model validation plots and quantile table')
+    logger.info('Making DEA model validation plots and quantile table')
     quantiles = (1, 5, 16, 50, 84, 95, 99)
     # store lines of quantile table in a string and write out later
     quant_table = ''
@@ -756,7 +757,7 @@ def make_validation_plots(opt, tlm, db):
         plot['lines'] = filename
 
         # Make quantiles
-        if msid == '1dpamzt':
+        if msid == '1deamzt':
             ok = tlm[msid] > 20.0
         else:
             ok = np.ones(len(tlm[msid]), dtype=bool)

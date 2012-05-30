@@ -1,15 +1,15 @@
 # Set the task name
-TASK = dpa
+TASK = dea
 
 # Versions
-VERSION = `python dpa_check.py --version`
+VERSION = `python dea_check.py --version`
 
 # Uncomment the correct choice indicating either SKA or TST flight environment
 FLIGHT_ENV = SKA
 
-BIN = dpa_check
-SHARE = dpa_check.py VERSION dpa_model_spec.json \
-	index_template.rst index_template_val_only.rst dpa_check.css html4css1.css
+BIN = dea_check
+SHARE = dea_check.py VERSION dea_model_spec.json \
+	index_template.rst index_template_val_only.rst dea_check.css html4css1.css
 DATA = task_schedule.cfg
 
 DOC = doc/_build/html
