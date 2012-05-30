@@ -1,6 +1,6 @@
 #!/bin/sh
 
 eval `/proj/sot/ska/bin/flt_envs -shell sh`
-exec /proj/sot/ska/share/dpe/dpe_check.py "$@"
+exec /proj/sot/ska/share/dea/dea_check.py "$@"
 
 exit 1
