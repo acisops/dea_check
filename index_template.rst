@@ -1,5 +1,5 @@
 =======================
-DPA temperatures check
+DEA temperatures check
 =======================
 .. role:: red
 
@@ -16,7 +16,7 @@ Summary
 ====================  =============================================
 Date start            {{proc.datestart}}
 Date stop             {{proc.datestop}}
-1DPAMZT status        {%if viols.dpa%}:red:`NOT OK`{% else %}OK{% endif%} (limit = {{proc.dpa_limit|floatformat:1}} C)
+1DEAMZT status        {%if viols.dea%}:red:`NOT OK`{% else %}OK{% endif%} (limit = {{proc.dea_limit|floatformat:1}} C)
 {% if opt.loaddir %}
 Load directory        {{opt.loaddir}}
 {% endif %}
@@ -26,31 +26,31 @@ Temperatures          `<temperatures.dat>`_
 States                `<states.dat>`_
 ====================  =============================================
 
-{% if viols.dpa  %}
-1DPAMZT Violations
+{% if viols.dea  %}
+1DEAMZT Violations
 -------------------
 =====================  =====================  ==================
 Date start             Date stop              Max temperature
 =====================  =====================  ==================
-{% for viol in viols.dpa %}
+{% for viol in viols.dea %}
 {{viol.datestart}}  {{viol.datestop}}  {{viol.maxtemp|floatformat:2}}
 {% endfor %}
 =====================  =====================  ==================
 {% else %}
-No 1DPAMZT Violations
+No 1DEAMZT Violations
 {% endif %}
 
-.. image:: {{plots.dpa.filename}}
+.. image:: {{plots.dea.filename}}
 .. image:: {{plots.pow_sim.filename}}
 
 =======================
-DPA Model Validation
+DEA Model Validation
 =======================
 
 MSID quantiles
 ---------------
 
-Note: DPA quantiles are calculated using only points where 1DPAMZT > 20 degC.
+Note: DEA quantiles are calculated using only points where 1DEAMZT > 20 degC.
 
 .. csv-table:: 
    :header: "MSID", "1%", "5%", "16%", "50%", "84%", "95%", "99%"
@@ -83,7 +83,7 @@ No Validation Violations
 {{ plot.msid }}
 -----------------------
 
-Note: DPA residual histograms include only points where 1DPAMZT > 20 degC.
+Note: DEA residual histograms include only points where 1DEAMZT > 20 degC.
 
 Red = telemetry, blue = model
 

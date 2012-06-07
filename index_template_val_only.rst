@@ -1,5 +1,5 @@
 =======================
-DPA temperatures check
+DEA temperatures check
 =======================
 .. role:: red
 
@@ -22,13 +22,13 @@ Run log               `<run.dat>`_
 ====================  =============================================
 
 =======================
-DPA Model Validation
+DEA Model Validation
 =======================
 
 MSID quantiles
 ---------------
 
-Note: DPA quantiles are calculated using only points where 1DPAMZT > 20 degC.
+Note: DEA quantiles are calculated using only points where 1DEAMZT > 20 degC.
 
 .. csv-table:: 
    :header: "MSID", "1%", "5%", "16%", "50%", "84%", "95%", "99%"
@@ -62,7 +62,7 @@ No Validation Violations
 {{ plot.msid }}
 -----------------------
 
-Note: DPA residual histograms include only points where 1DPAMZT > 20 degC.
+Note: DEA residual histograms include only points where 1DEAMZT > 20 degC.
 
 Red = telemetry, blue = model
 
