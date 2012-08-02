@@ -215,13 +215,11 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
 
 
 def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
-    print "In make_week_predict"
-    
     # Try to make initial state0 from cmd line options
     state0 = dict((x, getattr(opt, x))
                   for x in ('pitch', 'simpos', 'ccd_count', 'fep_count',
                             'vid_board', 'clocking', 'T_dea'))
-    print state0
+    
     state0.update({'tstart': tstart - 30,
                    'tstop': tstart,
                    'datestart': DateTime(tstart - 30).date,
@@ -229,7 +227,7 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
                    'q1': 0.0, 'q2': 0.0, 'q3': 0.0, 'q4': 1.0,
                    }
                   )
-    print state0
+    
     # If cmd lines options were not fully specified then get state0 as last
     # cmd_state that starts within available telemetry.  Update with the
     # mean temperatures at the start of state0.
@@ -282,7 +280,7 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
 
     # Create array of times at which to calculate DEA temps, then do it.
     logger.info('Calculating DEA thermal model')
-    print state0
+    
     model = calc_model(opt.model_spec, states, state0['tstart'], tstop,
                        state0['T_dea'])
 
