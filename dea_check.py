@@ -39,11 +39,17 @@ import Ska.Matplotlib
 import xija
 
 MSID = dict(dea='1DEAMZT')
-YELLOW = dict(dea=35.0)
-MARGIN = dict(dea=2.5)
-VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.5),
+
+# 10/02/14 - Changed YELLOW from 35.0 to 37.5
+#            Changed MARGIN from 2.5 to 2.0
+#            Modified corresponding VALIDATION_LIMITS:
+#                 (1, 2.5) -> (1, 2.0)
+#                 (99, 2.5) -> (99, 2.0)
+YELLOW = dict(dea=37.5)
+MARGIN = dict(dea=2.0)
+VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.0),
                                  (50, 1.0),
-                                 (99, 2.5)],
+                                 (99, 2.0)],
                      'PITCH': [(1, 3.0),
                                   (99, 3.0)],
                      'TSCPOS': [(1, 2.5),
@@ -55,6 +61,7 @@ URL = "http://cxc.harvard.edu/mta/ASPECT/dea_daily_check"
 
 logger = logging.getLogger('dea_check')
 
+# 10/02/14 -  VERSION file changed from 0.2 to 1.0
 _versionfile = os.path.join(os.path.dirname(__file__), 'VERSION')
 VERSION = open(_versionfile).read().strip()
 
