@@ -26,6 +26,8 @@ import Ska.Table
 import Ska.Numpy
 import Ska.engarchive.fetch_sci as fetch
 from Chandra.Time import DateTime
+from Quaternion import Quat
+import Ska.Sun
 
 import Chandra.cmd_states as cmd_states
 # Matplotlib setup
@@ -204,6 +206,14 @@ def main(opt):
                 viols=pred['viols'], proc=proc,
                 plots_validation=plots_validation)
 
+def calc_off_nom_rolls(states):
+    off_nom_rolls = []
+    for state in states:
+        att = [state[x] for x in ['q1', 'q2', 'q3', 'q4']]
+        time = (state['tstart'] + state['tstop']) / 2
+        off_nom_rolls.append(Ska.Sun.off_nominal_roll(att, time))
+    return np.array(off_nom_rolls)
+
 
 def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
     model = xija.ThermalModel('dea', start=start, stop=stop,
@@ -213,6 +223,7 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
     model.comp['sim_z'].set_data(states['simpos'], times)
     model.comp['eclipse'].set_data(False)
     model.comp['1deamzt'].set_data(T_dea, T_dea_times)
+    model.comp['roll'].set_data(calc_off_nom_rolls(states), times)
     for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking', 'pitch'):
         model.comp[name].set_data(states[name], times)
 
