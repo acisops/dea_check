@@ -660,6 +660,8 @@ def make_check_plots(opt, states, times, temps, tstart):
         )
     plots['pow_sim']['ax'].axvline(load_start, linestyle=':', color='g',
                                    linewidth=1.0)
+    # The next several lines ensure that the width of the axes
+    # of all the weekly prediction plots are the same.
     w1, h1 = plots['dea']['fig'].get_size_inches()
     w2, h2 = plots['pow_sim']['fig'].get_size_inches()
     lm = plots['dea']['fig'].subplotpars.left*w1/w2
