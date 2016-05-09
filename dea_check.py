@@ -656,10 +656,17 @@ def make_check_plots(opt, states, times, temps, tstart):
         y2=pointpair(states['simpos']),
         ylabel2='SIM-Z (steps)',
         ylim2=(-105000, 105000),
+        figsize=(7.5, 3.5),
         )
     plots['pow_sim']['ax'].axvline(load_start, linestyle=':', color='g',
                                    linewidth=1.0)
-    plots['pow_sim']['fig'].subplots_adjust(right=0.85)
+    # The next several lines ensure that the width of the axes
+    # of all the weekly prediction plots are the same.
+    w1, h1 = plots['dea']['fig'].get_size_inches()
+    w2, h2 = plots['pow_sim']['fig'].get_size_inches()
+    lm = plots['dea']['fig'].subplotpars.left*w1/w2
+    rm = plots['dea']['fig'].subplotpars.right*w1/w2
+    plots['pow_sim']['fig'].subplots_adjust(left=lm, right=rm)
     filename = 'pow_sim.png'
     outfile = os.path.join(opt.outdir, filename)
     logger.info('Writing plot file %s' % outfile)
