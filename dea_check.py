@@ -42,6 +42,7 @@ VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.0),
                      'TSCPOS': [(1, 2.5),
                                 (99, 2.5)]
                      }
+HIST_LIMIT = [20.]
 
 TASK_DATA = os.path.dirname(__file__)
 logger = logging.getLogger('dea_check')
@@ -134,7 +135,7 @@ if __name__ == '__main__':
     try:
         dea_check = ModelCheck("1deamzt", "dea", MSID,
                                YELLOW, MARGIN, VALIDATION_LIMITS,
-                               calc_model, VERSION)
+                               HIST_LIMIT, calc_model, VERSION)
         dea_check.driver(opt)
     except Exception, msg:
         if opt.traceback:
