@@ -8,9 +8,8 @@ VERSION = `python dea_check.py --version`
 FLIGHT_ENV = SKA
 
 BIN = dea_check
-SHARE = dea_check.py VERSION dea_model_spec.json \
-	index_template.rst index_template_val_only.rst dea_check.css html4css1.css
-DATA = task_schedule.cfg
+SHARE = dea_check.py VERSION dea_model_spec.json 
+DATA =
 
 DOC = doc/_build/html
 
