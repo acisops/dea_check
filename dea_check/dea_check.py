@@ -24,7 +24,7 @@ from acis_thermal_check.main import ACISThermalCheck
 from acis_thermal_check.utils import calc_off_nom_rolls, get_options
 import os
 
-script_path = os.path.abspath(os.path.dirname(__file__))
+model_path = os.path.abspath(os.path.dirname(__file__))
 
 MSID = dict(dea='1DEAMZT')
 # 10/02/14 - Changed YELLOW from 35.0 to 37.5
@@ -63,7 +63,7 @@ dea_check = ACISThermalCheck("1deamzt", "dea", MSID,
                              HIST_LIMIT, calc_model)
 
 def main():
-    opt, args = get_options("1DEAMZT", "dea", script_path)
+    opt, args = get_options("1DEAMZT", "dea", model_path)
     try:
         dea_check.driver(opt)
     except Exception as msg:
