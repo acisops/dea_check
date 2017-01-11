@@ -2,11 +2,7 @@
 from setuptools import setup
 from dea_check import __version__
 
-entry_points = {}
-entry_points['console_scripts'] = [
-    'dea_check = dea_check.dea_check:main',
-]
-
+entry_points = {'console_scripts': 'dea_check = dea_check.dea_check:main'}
 
 setup(name='dea_check',
       packages=["dea_check"],
@@ -21,6 +17,7 @@ setup(name='dea_check',
           'Intended Audience :: Science/Research',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.5',
       ],
       entry_points=entry_points,
       )
