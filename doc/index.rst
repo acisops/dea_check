@@ -122,8 +122,11 @@ Example Invocations
   dea_check --outdir=regress2010 --run-start=2010:365 --days=360
   
 
-Running Regression Tests
-------------------------
+Regression Tests
+----------------
+
+Running Tests
+^^^^^^^^^^^^^
 
 ``dea_check`` comes with a regression test suite which uses `py.test <http://pytest.org/>`_ to
 run the tests by comparing the answers given by the code to a "gold standard" set of answers. To
@@ -149,3 +152,21 @@ with the ACIS operations team before copying to the default location for the "go
 answers.
 
 Answers should be generated using the ``py.test`` that is part of the flight Ska environment.
+
+Adding New Tests
+^^^^^^^^^^^^^^^^
+
+If you want to add a new test for 1DEAMZT which runs the model for a particular load, it is very easy.
+This test should be added to ``dea_check/dea_check/tests/test_dea.py``, and have the following form:
+
+.. code-block:: python
+
+    def test_dea_may3016(generate_answers):
+        run_start = "2016:122:12:00:00.000"
+        load_week = "MAY3016"
+        dea_test_template(generate_answers, run_start, load_week)
+
+This test runs the model for the ``"MAY3016"`` ``load_week``, at a particular value of ``run_start``. 
+These arguments are fed into the ``dea_test_template`` fucntion, which runs the actual test. The function
+should have a name in the format ``test_dea_{load_week}``, and it must take the ``generate_answers``
+argument. 
