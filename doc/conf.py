@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import dea_check
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,7 +46,7 @@ copyright = u'2012, Nancy RA. Wolk'
 # built documents.
 #
 # The short X.Y version.
-version = open('../VERSION').read().strip()
+version = dea_check.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 
