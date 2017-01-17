@@ -15,7 +15,7 @@ def dea_test_template(generate_answers, run_start, load_week,
     out_dir = run_model("dea", dea_check, model_spec, run_start, 
                         load_week, cmd_states_db)
     run_answer_test("dea", load_week, out_dir, generate_answers)
-    run_image_test("1deamzt", "dea", out_dir, generate_answers)
+    run_image_test("1deamzt", "dea", load_week, out_dir, generate_answers)
     os.chdir(curdir)
     shutil.rmtree(tmpdir)
 
