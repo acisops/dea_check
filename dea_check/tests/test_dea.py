@@ -14,7 +14,7 @@ def dea_test_template(generate_answers, run_start, oflsdir,
     model_spec = os.path.join(model_path, "dea_model_spec.json")
     out_dir = run_model("dea", dea_check, model_spec, run_start, 
                         oflsdir, cmd_states_db)
-    run_answer_test("dea", out_dir, generate_answers)
+    run_answer_test("dea", oflsdir, out_dir, generate_answers)
     run_image_test("1deamzt", "dea", out_dir, generate_answers)
     os.chdir(curdir)
     shutil.rmtree(tmpdir)
