@@ -3,7 +3,7 @@ import shutil
 import tempfile
 
 from ..dea_check import dea_check, model_path
-from acis_thermal_check.test_utils import run_answer_test, \
+from acis_thermal_check.regression_testing import run_answer_test, \
     run_image_test, run_model
 
 def dea_test_template(generate_answers, run_start, load_week, 
