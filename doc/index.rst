@@ -106,7 +106,6 @@ Option                    Description                          Default
   --clocking=CLOCKING     Initial state of ACIS clocking       1
   --simpos=SIMPOS         Initial SIM-Z position (steps)       75616
   --pitch=PITCH           Initial pitch (degrees)              150
-  --dh_heater=DH_HEATER   ACIS DH Heater on/off (PSMC only)    0
 ========================= ==================================== ===================
 
 Example Invocations
