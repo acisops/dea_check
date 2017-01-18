@@ -174,7 +174,7 @@ htmlhelp_basename = 'deadoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'dea.tex', u'DEA Documentation',
-   u'Nancy RA. Wolk', 'manual'),
+   u'CXC ACIS Operations', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
