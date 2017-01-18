@@ -38,8 +38,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'dea'
-copyright = u'2012, Nancy RA. Wolk'
+project = u'1DEAMZT Thermal Model Predictions and Testing'
+copyright = u'2016, CXC ACIS Operations Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
