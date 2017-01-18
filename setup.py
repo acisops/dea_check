@@ -4,6 +4,8 @@ from dea_check import __version__
 
 entry_points = {'console_scripts': 'dea_check = dea_check.dea_check:main'}
 
+url = 'https://github.com/acisops/dea_check/tarball/{}'.format(__version__)
+
 setup(name='dea_check',
       packages=["dea_check"],
       version=__version__,
@@ -11,7 +13,7 @@ setup(name='dea_check',
       author='John ZuHone',
       author_email='jzuhone@gmail.com',
       url='http://github.com/acisops/dea_check',
-      download_url='https://github.com/acisops/dea_check/tarball/2.0',
+      download_url=url,
       include_package_data=True,
       classifiers=[
           'Intended Audience :: Science/Research',
