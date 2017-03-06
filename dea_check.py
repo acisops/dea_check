@@ -283,8 +283,7 @@ def make_week_predict(opt, tstart, tstop, bs_cmds, tlm, db):
 
     # Delete non-load cmds that are within the backstop time span
     # => Keep if timeline_id is not None or date < bs_cmds[0]['time']
-    db_cmds = [x for x in db_cmds if (x['timeline_id'] is not None or
-                                      x['time'] < bs_cmds[0]['time'])]
+    db_cmds = [x for x in db_cmds if x['time'] < bs_cmds[0]['time']]
 
     logger.info('Got %d cmds from database between %s and %s' %
                   (len(db_cmds), cmds_datestart, cmds_datestop))
