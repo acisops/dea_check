@@ -8,6 +8,8 @@ from acis_thermal_check.regression_testing import run_answer_test, \
 
 def dea_test_template(generate_answers, run_start, load_week, 
                       cmd_states_db='sybase'):
+    if generate_answers is not None:
+        generate_answers = os.path.abspath(generate_answers)
     tmpdir = tempfile.mkdtemp()
     curdir = os.getcwd()
     os.chdir(tmpdir)
