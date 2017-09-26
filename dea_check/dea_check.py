@@ -63,11 +63,11 @@ dea_check = ACISThermalCheck("1deamzt", "dea", MSID,
                              HIST_LIMIT, calc_model)
 
 def main():
-    opt, args = get_options("1DEAMZT", "dea", model_path)
+    args = get_options("1DEAMZT", "dea", model_path)
     try:
-        dea_check.driver(opt)
+        dea_check.driver(args)
     except Exception as msg:
-        if opt.traceback:
+        if args.traceback:
             raise
         else:
             print("ERROR:", msg)
