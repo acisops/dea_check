@@ -20,11 +20,17 @@ matplotlib.use('Agg')
 import sys
 import numpy as np
 import xija
-from acis_thermal_check.main import ACISThermalCheck
-from acis_thermal_check.utils import calc_off_nom_rolls, get_options
+from acis_thermal_check import \
+    ACISThermalCheck, \
+    calc_off_nom_rolls, \
+    get_options, \
+    state_builders, \
+    get_acis_limits
 import os
 
 model_path = os.path.abspath(os.path.dirname(__file__))
+
+yellow_hi, red_hi = get_acis_limits("1deamzt")
 
 MSID = dict(dea='1DEAMZT')
 # 10/02/14 - Changed YELLOW from 35.0 to 37.5
@@ -32,7 +38,7 @@ MSID = dict(dea='1DEAMZT')
 #            Modified corresponding VALIDATION_LIMITS:
 #                 (1, 2.5) -> (1, 2.0)
 #                 (99, 2.5) -> (99, 2.0)
-YELLOW = dict(dea=37.5)
+YELLOW = dict(dea=yellow_hi)
 MARGIN = dict(dea=2.0)
 VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.0),
                                  (50, 1.0),
@@ -58,12 +64,12 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
     model.calc()
     return model
 
-dea_check = ACISThermalCheck("1deamzt", "dea", MSID,
-                             YELLOW, MARGIN, VALIDATION_LIMITS,
-                             HIST_LIMIT, calc_model)
-
 def main():
     args = get_options("1DEAMZT", "dea", model_path)
+    dea_check = ACISThermalCheck("1deamzt", "dea",
+                                 state_builders[args.state_builder], MSID,
+                                 YELLOW, MARGIN, VALIDATION_LIMITS,
+                                 HIST_LIMIT, calc_model)
     try:
         dea_check.driver(args)
     except Exception as msg:
