@@ -1,6 +1,6 @@
 from ..dea_check import dea_check, model_path
-from acis_thermal_check.regression_testing import run_answer_test, \
-    run_image_test, run_model, load_test_template
+from acis_thermal_check.regression_testing import \
+    load_test_template
 import os
 
 default_model_spec = os.path.join(model_path, "dea_model_spec.json")
