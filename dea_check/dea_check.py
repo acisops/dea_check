@@ -25,6 +25,7 @@ from acis_thermal_check import \
     calc_off_nom_rolls, \
     get_options, \
     state_builders, \
+    make_state_builder, \
     get_acis_limits
 import os
 
@@ -62,12 +63,13 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
 
 def main():
     args = get_options("dea", model_path)
-    dea_check = ACISThermalCheck("1deamzt", "dea",
-                                 state_builders[args.state_builder], MSID,
-                                 YELLOW, MARGIN, VALIDATION_LIMITS,
+    state_builder = make_state_builder(args.state_builder, args)
+    dea_check = ACISThermalCheck("1deamzt", "dea", MSID, YELLOW,
+                                 MARGIN, VALIDATION_LIMITS,
                                  HIST_LIMIT, calc_model)
+
     try:
-        dea_check.driver(args)
+        dea_check.driver(args, state_builder)
     except Exception as msg:
         if args.traceback:
             raise
