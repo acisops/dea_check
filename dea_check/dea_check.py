@@ -24,7 +24,6 @@ from acis_thermal_check import \
     ACISThermalCheck, \
     calc_off_nom_rolls, \
     get_options, \
-    state_builders, \
     make_state_builder, \
     get_acis_limits
 import os
