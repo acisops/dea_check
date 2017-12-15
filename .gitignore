@@ -1,0 +1,5 @@
+build
+dist
+*.pyc
+dea_check.egg-info
+doc/_build
