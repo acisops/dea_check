@@ -23,23 +23,13 @@ import xija
 from acis_thermal_check import \
     ACISThermalCheck, \
     calc_off_nom_rolls, \
-    get_options, \
-    make_state_builder, \
-    get_acis_limits
+    get_options
 import os
 
 model_path = os.path.abspath(os.path.dirname(__file__))
 
-yellow_hi, red_hi = get_acis_limits("1deamzt")
 
 MSID = {"dea": '1DEAMZT'}
-# 10/02/14 - Changed YELLOW from 35.0 to 37.5
-#            Changed MARGIN from 2.5 to 2.0
-#            Modified corresponding VALIDATION_LIMITS:
-#                 (1, 2.5) -> (1, 2.0)
-#                 (99, 2.5) -> (99, 2.0)
-YELLOW = {"dea": yellow_hi}
-MARGIN = {"dea": 2.0}
 VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.0), (50, 1.0), (99, 2.0)],
                      'PITCH': [(1, 3.0),(99, 3.0)],
                      'TSCPOS': [(1, 2.5), (99, 2.5)]
@@ -62,13 +52,12 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None):
 
 def main():
     args = get_options("dea", model_path)
-    state_builder = make_state_builder(args.state_builder, args)
-    dea_check = ACISThermalCheck("1deamzt", "dea", MSID, YELLOW,
-                                 MARGIN, VALIDATION_LIMITS,
-                                 HIST_LIMIT, calc_model)
+    dea_check = ACISThermalCheck("1deamzt", "dea", MSID, 
+                                 VALIDATION_LIMITS, HIST_LIMIT, 
+                                 calc_model, args)
 
     try:
-        dea_check.driver(args, state_builder)
+        dea_check.driver()
     except Exception as msg:
         if args.traceback:
             raise
