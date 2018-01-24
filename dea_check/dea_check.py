@@ -56,9 +56,8 @@ def main():
     dea_check = ACISThermalCheck("1deamzt", "dea", MSID, 
                                  VALIDATION_LIMITS, HIST_LIMIT, 
                                  calc_model, args)
-
     try:
-        dea_check.driver()
+        dea_check.run()
     except Exception as msg:
         if args.traceback:
             raise
