@@ -5,5 +5,5 @@ def pytest_addoption(parser):
         help="Generate new answers, but don't test. Argument is the directory to store the answers to.")
 
 @pytest.fixture()
-def generate_answers(request):
+def answer_store(request):
     return request.config.getoption('--answer_store')

@@ -28,8 +28,6 @@ import os
 
 model_path = os.path.abspath(os.path.dirname(__file__))
 
-
-MSID = {"dea": '1DEAMZT'}
 VALIDATION_LIMITS = {'1DEAMZT': [(1, 2.0), (50, 1.0), (99, 2.0)],
                      'PITCH': [(1, 3.0),(99, 3.0)],
                      'TSCPOS': [(1, 2.5), (99, 2.5)]
@@ -53,9 +51,8 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None,
 
 def main():
     args = get_options("dea", model_path)
-    dea_check = ACISThermalCheck("1deamzt", "dea", MSID, 
-                                 VALIDATION_LIMITS, HIST_LIMIT, 
-                                 calc_model, args)
+    dea_check = ACISThermalCheck("1deamzt", "dea", VALIDATION_LIMITS, 
+                                 HIST_LIMIT, calc_model, args)
     try:
         dea_check.run()
     except Exception as msg:
