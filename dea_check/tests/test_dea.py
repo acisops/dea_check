@@ -7,5 +7,4 @@ dea_rt = RegressionTester("1deamzt", "dea", model_path, VALIDATION_LIMITS,
                           HIST_LIMIT, calc_model)
 
 def test_dea_loads(answer_store):
-    dea_rt.run_test_arrays([VALIDATION_LIMITS, HIST_LIMIT, calc_model],
-                           answer_store)
+    dea_rt.run_test_arrays(answer_store)
