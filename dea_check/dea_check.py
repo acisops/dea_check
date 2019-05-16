@@ -18,8 +18,6 @@ import matplotlib
 matplotlib.use('Agg')
 
 import sys
-import numpy as np
-import xija
 from acis_thermal_check import \
     ACISThermalCheck, \
     get_options
@@ -28,14 +26,14 @@ import os
 model_path = os.path.abspath(os.path.dirname(__file__))
 
 
-class DPACheck(ACISThermalCheck):
+class DEACheck(ACISThermalCheck):
     def __init__(self):
         valid_limits = {'1DEAMZT': [(1, 2.0), (50, 1.0), (99, 2.0)],
                         'PITCH': [(1, 3.0), (99, 3.0)],
                         'TSCPOS': [(1, 2.5), (99, 2.5)]
                         }
         hist_limit = [20.0]
-        super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
+        super(DEACheck, self).__init__("1deamzt", "dea", valid_limits,
                                        hist_limit)
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
