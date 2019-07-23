@@ -56,8 +56,7 @@ class DEACheck(ACISThermalCheck):
             model.comp['dea0'].set_data(T_dea0, model.times)
 
 
-def main():
-    args = get_options("dea", model_path)
+def main(args):
     dea_check = DEACheck()
     try:
         dea_check.run(args)
@@ -70,4 +69,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = get_options("dea", model_path)
+    main(args)
