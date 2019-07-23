@@ -45,6 +45,13 @@ def calc_model(model_spec, states, start, stop, T_dea=None, T_dea_times=None,
     model.comp['roll'].set_data(calc_off_nom_rolls(states), times)
     for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking', 'pitch'):
         model.comp[name].set_data(states[name], times)
+    # 1deamzt pseudonode
+    if 'dea0' in model.comp:
+        if T_dea is None:
+            T_dea0 = model.comp["1deamzt"].dvals
+        else:
+            T_dea0 = T_dea
+        model.comp['dea0'].set_data(T_dea0, T_dea_times)
     model.make()
     model.calc()
     return model
