@@ -140,7 +140,7 @@
             "name": "clocking"
         },
         {
-            "class_name": "NewSolarHeatHrcOpts",
+            "class_name": "SolarHeatHrcMult",
             "init_args": [
                 "dea0"
             ],
