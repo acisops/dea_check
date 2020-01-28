@@ -12,10 +12,5 @@ setup(name='dea_check',
       author_email='jzuhone@gmail.com',
       url='http://github.com/acisops/dea_check',
       include_package_data=True,
-      classifiers=[
-          'Intended Audience :: Science/Research',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python :: 3',
-      ],
       entry_points=entry_points,
       )
