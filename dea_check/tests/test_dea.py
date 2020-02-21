@@ -1,11 +1,9 @@
-from ..dea_check import VALIDATION_LIMITS, \
-    HIST_LIMIT, model_path
+from ..dea_check import model_path, DEACheck
 from acis_thermal_check.regression_testing import \
     RegressionTester, all_loads
 import pytest
 
-dea_rt = RegressionTester("1deamzt", "dea", model_path, VALIDATION_LIMITS,
-                          HIST_LIMIT)
+dea_rt = RegressionTester(DEACheck, model_path)
 
 # Prediction tests
 
