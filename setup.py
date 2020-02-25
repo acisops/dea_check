@@ -2,9 +2,9 @@
 from setuptools import setup
 
 try:
-      from testr.setup_helper import cmdclass
+    from testr.setup_helper import cmdclass
 except ImportError:
-      cmdclass = {}
+    cmdclass = {}
 
 entry_points = {'console_scripts': 'dea_check = dea_check.dea_check:main'}
 
