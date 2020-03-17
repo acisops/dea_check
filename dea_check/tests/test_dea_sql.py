@@ -5,7 +5,7 @@ import pytest
 
 dea_rt = RegressionTester(DEACheck, model_path, "dea_test_spec.json")
 
-# ACIS state builder tests
+# SQL state builder tests
 
 dea_rt.run_models(state_builder='sql')
 
