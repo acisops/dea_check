@@ -1,0 +1,317 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1DEAMZT Thermal Model (dea_check) &#8212; 1DEAMZT Thermal Model Predictions and Testing 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/bootstrap-astropy.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script type="text/javascript" src="_static/sidebar.js"></script>
+    <script type="text/javascript" src="_static/copybutton.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,600' rel='stylesheet' type='text/css'/>
+
+  </head><body>
+<div class="topbar">
+  <a class="brand" title="Documentation Home" href="#"><span id="logotext1">Ska! </span><span id="logotext2">Quaternion</span><span id="logotext3"></span></a>
+  <ul>
+    
+    <li><a class="home" title="Homepage" href="">
+        <span id="logotext1">ska</span><span id="logotext2">tools</span>
+    </a></li>
+    <li><a title="General Index" href="genindex.html">Index</a></li>
+    <li><a title="Module Index" href="py-modindex.html">Modules</a></li>
+    <li>
+      
+      
+<form action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      
+    </li>
+  </ul>
+</div>
+
+<div class="related">
+    <h3>Navigation</h3>
+    <ul>
+      <li>
+	<a href="#">1DEAMZT Thermal Model Predictions and Testing 3.1.0 documentation</a>
+	 &#187;
+      </li>
+      
+       
+    </ul>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="deamzt-thermal-model-dea-check">
+<h1>1DEAMZT Thermal Model (<code class="docutils literal notranslate"><span class="pre">dea_check</span></code>)<a class="headerlink" href="#deamzt-thermal-model-dea-check" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This code generates backstop load review outputs for checking the ACIS temperature
+1DEAMZT. It also generates model validation plots for 1DEAMZT, comparing predicted
+values to telemetry for the previous three weeks. <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> depends on the
+<a class="reference external" href="http://cxc.harvard.edu/acis/acis_thermal_check"><code class="docutils literal notranslate"><span class="pre">acis_thermal_check</span></code></a> Python package for nearly all of its functionality.</p>
+</div>
+<div class="section" id="installation-and-development">
+<h2>Installation and Development<a class="headerlink" href="#installation-and-development" title="Permalink to this headline">¶</a></h2>
+<p>This assumes that you have a cloned copy of <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> from
+<a class="reference external" href="http://github.com/acisops/dea_check">http://github.com/acisops/dea_check</a>. If you have your own Python/Ska environment
+available (on a laptop or some other machine), and you have write permissions on it,
+to install the package simply run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>from the top-level directory of the package. This will install <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> as a
+Python package, including installing the <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> command-line script into the
+same <code class="docutils literal notranslate"><span class="pre">bin</span></code> directory that the Python executable is in.</p>
+<p>If you are running and testing this package using the flight-approved Ska environment
+on the HEAD LAN, you will not be able to directly install into this environment but
+can install <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> as a local package. In this case, the command is slightly
+modified:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span>
+</pre></div>
+</div>
+<p>which will install the package under a path given by the <code class="docutils literal notranslate"><span class="pre">site.USER_BASE</span></code> variable
+in Python, which on Linux is <code class="docutils literal notranslate"><span class="pre">~/.local</span></code>. This path can be modified by setting the
+environment variable <code class="docutils literal notranslate"><span class="pre">PYTHONUSERBASE</span></code> to the desired path before running the above
+command. You will need to add <code class="docutils literal notranslate"><span class="pre">${PYTHONUSERBASE}/bin</span></code> to your <code class="docutils literal notranslate"><span class="pre">PATH</span></code> environment
+variable in order to run the <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> script from there.</p>
+<p>If you are doing frequent development and would like to be able to change the code
+on the fly and re-run without having to reinstall the code every time, you can use the
+<code class="docutils literal notranslate"><span class="pre">develop</span></code> option of <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>, which lets you run the code from the source directory
+itself:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span> <span class="p">[</span><span class="o">--</span><span class="n">user</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">--user</span></code> flag is again only necessary if you do not have write permissions for
+the Python environment you are installing into. If you use <code class="docutils literal notranslate"><span class="pre">develop</span></code>, all imports of
+the <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> package will refer back to the code in the source directory that you are
+working from.</p>
+</div>
+<div class="section" id="command-line-options">
+<h2>Command line options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="typical-use-case">
+<h3>Typical use case<a class="headerlink" href="#typical-use-case" title="Permalink to this headline">¶</a></h3>
+<p>In the typical use case for doing load review the <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> tool will propagate
+forward from a 5-minute average of the last available telemetry using the <code class="docutils literal notranslate"><span class="pre">cmd_states</span></code>
+table. The following options control the runtime behavior of the <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> script:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 44%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Default</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>–outdir=OUTDIR</p></td>
+<td><p>Output directory</p></td>
+<td><p>out</p></td>
+</tr>
+<tr class="row-odd"><td><p>–oflsdir=OFLSDIR</p></td>
+<td><p>Load products OFLS directory</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-even"><td><p>–model-spec=MODEL_SPEC</p></td>
+<td><p>Model specification file</p></td>
+<td><p>dea_model_spec.json</p></td>
+</tr>
+<tr class="row-odd"><td><p>–days=DAYS</p></td>
+<td><p>Days of validation data (days)</p></td>
+<td><p>21</p></td>
+</tr>
+<tr class="row-even"><td><p>–run-start=RUN_START</p></td>
+<td><p>Start time for regression testing</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-odd"><td><p>–traceback=TRACEBACK</p></td>
+<td><p>Enable tracebacks</p></td>
+<td><p>True</p></td>
+</tr>
+<tr class="row-even"><td><p>–verbose=VERBOSE</p></td>
+<td><p>Verbosity 0=quiet 1=normal 2=debug</p></td>
+<td><p>1 (normal)</p></td>
+</tr>
+<tr class="row-odd"><td><p>–version</p></td>
+<td><p>Print version</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="custom-initial-conditions">
+<h3>Custom initial conditions<a class="headerlink" href="#custom-initial-conditions" title="Permalink to this headline">¶</a></h3>
+<p>In the event that the Ska database is unavailable or specific initial conditions
+are desired, the following options are provided. The only required option is that of
+the initial temperature:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Specifying custom conditions <em>still requires</em> the Ska database in the current release.</p>
+</div>
+<p>All the rest of the options have default values that will produce a conservative (hot)
+prediction:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 45%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Default</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>–T-dea=T_DEA</p></td>
+<td><p>Initial 1DEAMZT temperature (degC)</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-odd"><td><p>–ccd-count=CCD_COUNT</p></td>
+<td><p>Initial number of CCDs</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>–fep-count=FEP_COUNT</p></td>
+<td><p>Initial number of FEPs</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>–vid-board=VID_BOARD</p></td>
+<td><p>Initial state of ACIS vid_board</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>–clocking=CLOCKING</p></td>
+<td><p>Initial state of ACIS clocking</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>–simpos=SIMPOS</p></td>
+<td><p>Initial SIM-Z position (steps)</p></td>
+<td><p>75616</p></td>
+</tr>
+<tr class="row-even"><td><p>–pitch=PITCH</p></td>
+<td><p>Initial pitch (degrees)</p></td>
+<td><p>150</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="example-invocations">
+<h2>Example Invocations<a class="headerlink" href="#example-invocations" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dea_check</span> <span class="o">--</span><span class="n">oflsdir</span><span class="o">=/</span><span class="n">data</span><span class="o">/</span><span class="n">acis</span><span class="o">/</span><span class="n">LoadReviews</span><span class="o">/</span><span class="mi">2009</span><span class="o">/</span><span class="n">MAY1809</span><span class="o">/</span><span class="n">oflsb</span> <span class="o">--</span><span class="n">outdir</span><span class="o">=</span><span class="n">out</span>
+
+<span class="n">dea_check</span> <span class="o">--</span><span class="n">oflsdir</span><span class="o">=/</span><span class="n">data</span><span class="o">/</span><span class="n">acis</span><span class="o">/</span><span class="n">LoadReviews</span><span class="o">/</span><span class="mi">2009</span><span class="o">/</span><span class="n">MAY1809</span><span class="o">/</span><span class="n">oflsb</span> <span class="o">--</span><span class="n">simpos</span><span class="o">=-</span><span class="mi">99616</span> \
+          <span class="o">--</span><span class="n">pitch</span><span class="o">=</span><span class="mf">130.0</span> <span class="o">--</span><span class="n">T</span><span class="o">-</span><span class="n">dea</span><span class="o">=</span><span class="mf">22.2</span> <span class="o">--</span><span class="n">ccd</span><span class="o">-</span><span class="n">count</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">fep</span><span class="o">-</span><span class="n">count</span><span class="o">=</span><span class="mi">1</span>
+
+<span class="n">dea_check</span> <span class="o">--</span><span class="n">outdir</span><span class="o">=</span><span class="n">regress2010</span> <span class="o">--</span><span class="n">run</span><span class="o">-</span><span class="n">start</span><span class="o">=</span><span class="mi">2010</span><span class="p">:</span><span class="mi">365</span> <span class="o">--</span><span class="n">days</span><span class="o">=</span><span class="mi">360</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="regression-tests">
+<h2>Regression Tests<a class="headerlink" href="#regression-tests" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">dea_check</span></code> comes with a regression test suite which uses <a class="reference external" href="http://pytest.org/">py.test</a> to
+run the tests by comparing the answers given by the code to a “gold standard” set of answers. To
+determine if code changes pass these tests, within a cloned copy of <code class="docutils literal notranslate"><span class="pre">dea_check</span></code> in the
+<code class="docutils literal notranslate"><span class="pre">dea_check/dea_check/tests</span></code> subdirectory run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">py</span><span class="o">.</span><span class="n">test</span> <span class="o">-</span><span class="n">s</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">-s</span></code> flag outputs the <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code> to screen so you can see what’s going on.
+If you’d rather not see that, just remove the flag.</p>
+<p>If you have changed the model specification file or made another change that will change the answers,
+to generate new answers run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">py</span><span class="o">.</span><span class="n">test</span> <span class="o">-</span><span class="n">s</span> <span class="o">--</span><span class="n">generate_answers</span><span class="o">=</span><span class="n">answer_dir</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">answer_dir</span></code> is a directory to output the new answers to. The new answers should be reviewed
+with the ACIS operations team before copying to the default location for the “gold standard”
+answers.</p>
+<p>Answers should be generated using the <code class="docutils literal notranslate"><span class="pre">py.test</span></code> that is part of the flight Ska environment.</p>
+</div>
+<div class="section" id="adding-new-tests">
+<h3>Adding New Tests<a class="headerlink" href="#adding-new-tests" title="Permalink to this headline">¶</a></h3>
+<p>If you want to add a new test for 1DEAMZT which runs the model for a particular load, it is very easy.
+This test should be added to <code class="docutils literal notranslate"><span class="pre">dea_check/dea_check/tests/test_dea.py</span></code>, and have the following form:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_dea_may3016</span><span class="p">(</span><span class="n">generate_answers</span><span class="p">):</span>
+    <span class="n">run_start</span> <span class="o">=</span> <span class="s2">&quot;2016:122:12:00:00.000&quot;</span>
+    <span class="n">load_week</span> <span class="o">=</span> <span class="s2">&quot;MAY3016&quot;</span>
+    <span class="n">dea_test_template</span><span class="p">(</span><span class="n">generate_answers</span><span class="p">,</span> <span class="n">run_start</span><span class="p">,</span> <span class="n">load_week</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This test runs the model for the <code class="docutils literal notranslate"><span class="pre">&quot;MAY3016&quot;</span></code> <code class="docutils literal notranslate"><span class="pre">load_week</span></code>, at a particular value of <code class="docutils literal notranslate"><span class="pre">run_start</span></code>.
+These arguments are fed into the <code class="docutils literal notranslate"><span class="pre">dea_test_template</span></code> fucntion, which runs the actual test. The function
+should have a name in the format <code class="docutils literal notranslate"><span class="pre">test_dea_{load_week}</span></code>, and it must take the <code class="docutils literal notranslate"><span class="pre">generate_answers</span></code>
+argument.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Page Contents</h3>
+<ul>
+<li><a class="reference internal" href="#">1DEAMZT Thermal Model (<code class="docutils literal notranslate"><span class="pre">dea_check</span></code>)</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#installation-and-development">Installation and Development</a></li>
+<li><a class="reference internal" href="#command-line-options">Command line options</a><ul>
+<li><a class="reference internal" href="#typical-use-case">Typical use case</a></li>
+<li><a class="reference internal" href="#custom-initial-conditions">Custom initial conditions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-invocations">Example Invocations</a></li>
+<li><a class="reference internal" href="#regression-tests">Regression Tests</a><ul>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#adding-new-tests">Adding New Tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<form action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<footer class="footer">
+  <p class="pull-right"> &nbsp;
+    <a href="#">Back to Top</a></p>
+  <p>
+    &copy; Copyright 2016, CXC ACIS Operations Team.<br/>
+    Created using <a href="http://www.sphinx-doc.org/en/stable/">Sphinx</a> 3.1.2. &nbsp;
+  </p>
+</footer>
+  </body>
+</html>
