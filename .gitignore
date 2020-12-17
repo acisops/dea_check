@@ -3,3 +3,6 @@ dist
 *.pyc
 dea_check.egg-info
 doc/_build
+dea_check/tests/answers/*/*[.png, .csv, .css]
+dea_check/tests/answers/*/index.*
+dea_check/tests/answers/*/run.dat
