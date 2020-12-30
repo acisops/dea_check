@@ -16,7 +16,7 @@
     ],
     "run_start": "2019:338:14:25:26.816",
     "limits": {
-        "yellow_hi": 37.2,
-        "plan_limit_hi": 35.2
+        "yellow_hi_limit": 37.2,
+        "plan_hi_limit": 35.2
     }
 }
