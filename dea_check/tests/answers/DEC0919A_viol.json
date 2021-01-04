@@ -18,5 +18,10 @@
     "limits": {
         "yellow_hi_limit": 37.2,
         "plan_hi_limit": 35.2
-    }
+    },
+    "duration": [
+        "0.46",
+        "0.33",
+        "1.64"
+    ]
 }
