@@ -170,7 +170,7 @@
                     0.79
                 ],
                 "eclipse_comp": "eclipse",
-                "epoch": "2016:188",
+                "epoch": "2016:188:12:00:00",
                 "pitch_comp": "pitch",
                 "simz_comp": "sim_z",
                 "var_func": "linear"
